@@ -19,7 +19,7 @@ class CommitSidebarProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
         const commitItem = new vscode.TreeItem('Commit Changes', vscode.TreeItemCollapsibleState.None);
         commitItem.command = {
             command: 'extension.commitChanges',
-            title: 'Commit Change',
+            title: 'Commit Changes',
         };
 
         const filterItem = new vscode.TreeItem('Filter Commits', vscode.TreeItemCollapsibleState.None);
