@@ -1,5 +1,3 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
 class CommitSidebarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -18,7 +16,7 @@ class CommitSidebarProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
     private getCommitActions(): vscode.TreeItem[] {
         const commitItem = new vscode.TreeItem('Commit Changes', vscode.TreeItemCollapsibleState.None);
         commitItem.command = {
-            command: 'extension.commitChanges',
+            command: 'extension.runComIss',
             title: 'Commit Changes',
         };
 
@@ -65,7 +63,35 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.runComIss', () => {
+            runComIssCommand();
+        })
+    );
+
 	context.subscriptions.push(disposable);
+}
+
+async function runComIssCommand() {
+    const task = new vscode.Task(
+        { type: 'shell' },
+        vscode.TaskScope.Workspace,
+        'ComIss Task',
+        'ComIss',
+        new vscode.ShellExecution('git add . && ComIss commit')
+    );
+
+    const taskExecution = await vscode.tasks.executeTask(task);
+
+    vscode.tasks.onDidEndTaskProcess((e) => {
+        if (e.execution === taskExecution) {
+            if (e.exitCode === 0) {
+                vscode.window.showInformationMessage('ComIss command has finished running successfully.');
+            } else {
+                vscode.window.showErrorMessage('ComIss command failed.');
+            }
+        }
+    });
 }
 
 // This method is called when your extension is deactivated
