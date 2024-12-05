@@ -34,6 +34,7 @@ class CommitSidebarProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
     }
 }
 
+// This function holds the logic for creating a .env file and adding it to .gitignore
 function createEnvFile(context: vscode.ExtensionContext) {
     const panel = vscode.window.createWebviewPanel(
         'createEnvFile',
@@ -57,7 +58,7 @@ function createEnvFile(context: vscode.ExtensionContext) {
                 try {
                     // Create the .env file if it doesn't exist
                     if (!fs.existsSync(envPath)) {
-                        fs.writeFileSync(envPath, 'OPENAI_KEY=\n');
+                        fs.writeFileSync(envPath, 'OPENAI_API_KEY=\n');
                         vscode.window.showInformationMessage('.env file created successfully.');
                     } else {
                         vscode.window.showWarningMessage('.env file already exists.');
@@ -94,6 +95,7 @@ function createEnvFile(context: vscode.ExtensionContext) {
 }
 
 
+// Creates webview content for setting up OpenAI API Key
 function getWebviewContent(): string {
     return `
         <!DOCTYPE html>
