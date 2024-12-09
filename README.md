@@ -1,16 +1,27 @@
 # comis README
 
-This is the README for your extension "comis". After writing up a brief description, we recommend including the following sections.
+This is a VSCode extension built for use with our CLI tool found here: [https://github.com/edwardyeung04/commitment-issues](https://github.com/edwardyeung04/commitment-issues) 
 
-## Features
+## Setup
+First, you will need to setup Commitment Issues in your repository. Detailed instructions can be found in the repository linked above!
+For a quick start, you can simply download Commitment Issues using PIP install
+```
+pip install ComIss
+```
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+From here, clone this repository and open it.
+Once the repository is open, you can run the extension locally (simply press F5 if you are using VSCode).
 
-For example if there is an image subfolder under your extension project workspace:
+Notes:
+You must have TypeScript installed. To install TypeScript globally, you can run:
+``` 
+npm install -g typescript
+```
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+If you run the extension and the buttons do not seem to be appearing, trying running this install:
+```
+npm install --save-dev @types/vscode
+```
 
 ## Requirements
 
