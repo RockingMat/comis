@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+let comIssTerminal: vscode.Terminal | undefined;
+
 class CommitSidebarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
@@ -73,23 +75,116 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function runComIssCommand() {
+    const outputChannel = vscode.window.createOutputChannel('ComIss Output');
+    outputChannel.show();
+
+    const shellExecution = new vscode.ShellExecution('git add . && ComIss commit', { cwd: vscode.workspace.rootPath });
     const task = new vscode.Task(
         { type: 'shell' },
         vscode.TaskScope.Workspace,
-        'ComIss Task',
         'ComIss',
-        new vscode.ShellExecution('git add . && ComIss commit')
+        'ComIss',
+        shellExecution
     );
 
-    const taskExecution = await vscode.tasks.executeTask(task);
+    outputChannel.appendLine('Executing task...');
+    try {
+        await vscode.tasks.executeTask(task);
+        outputChannel.appendLine('Task execution started');
+    } catch (error) {
+        if (error instanceof Error) {
+            outputChannel.appendLine(`Error executing task: ${error.message}`);
+        } else {
+            outputChannel.appendLine('Error executing task: unknown error');
+        }
+    }
+
+    vscode.tasks.onDidStartTask((e) => {
+        if (e.execution.task === task) {
+            outputChannel.appendLine('Task started');
+        }
+    });
+
+    vscode.tasks.onDidEndTask((e) => {
+        if (e.execution.task === task) {
+            outputChannel.appendLine('Task ended');
+        }
+    });
 
     vscode.tasks.onDidEndTaskProcess((e) => {
-        if (e.execution === taskExecution) {
-            if (e.exitCode === 0) {
-                vscode.window.showInformationMessage('ComIss command has finished running successfully.');
-            } else {
-                vscode.window.showErrorMessage('ComIss command failed.');
+        if (e.execution.task === task) {
+            outputChannel.appendLine(`Task process ended with exit code ${e.exitCode}`);
+        }
+    });
+}
+
+class CustomTaskTerminal implements vscode.Pseudoterminal {
+    private writeEmitter = new vscode.EventEmitter<string>();
+    onDidWrite: vscode.Event<string> = this.writeEmitter.event;
+    private closeEmitter = new vscode.EventEmitter<void>();
+    onDidClose?: vscode.Event<void> = this.closeEmitter.event;
+
+    private taskOutput = '';
+
+    constructor(private shellExecution: vscode.ShellExecution, private outputChannel: vscode.OutputChannel) {}
+
+    open(initialDimensions: vscode.TerminalDimensions | undefined): void {
+        this.outputChannel.appendLine('Terminal opened');
+        this.doExecution();
+    }
+
+    close(): void {
+        this.outputChannel.appendLine('Terminal closed');
+    }
+
+    private async doExecution() {
+        this.outputChannel.appendLine('Starting task execution...');
+        const process = require('child_process').exec(this.shellExecution.commandLine, { cwd: this.shellExecution.options?.cwd });
+
+        process.stdout.on('data', (data: string) => {
+            this.taskOutput += data;
+            this.writeEmitter.fire(data);
+            this.outputChannel.appendLine(`stdout: ${data}`);
+        });
+
+        process.stderr.on('data', (data: string) => {
+            this.outputChannel.appendLine(`stderr: ${data}`);
+        });
+
+        process.on('close', (code: number) => {
+            this.outputChannel.appendLine(`Process exited with code ${code}`);
+            this.closeEmitter.fire();
+
+            if (this.taskOutput.trim() === '') {
+                vscode.window.showErrorMessage('Task output is empty.');
+                return;
             }
+
+            const commitMessage = extractCommitMessage(this.taskOutput);
+            if (commitMessage) {
+                showCommitMessageInputBox(commitMessage);
+            } else {
+                vscode.window.showErrorMessage('Failed to extract commit message.');
+            }
+        });
+    }
+
+    handleInput(data: string): void {
+        this.taskOutput += data;
+        this.writeEmitter.fire(data);
+        this.outputChannel.appendLine(`Received input: ${data}`);
+    }
+}
+
+function extractCommitMessage(output: string): string | null {
+    // Implement your logic to extract the commit message from the output
+    return output; // Placeholder
+}
+
+function showCommitMessageInputBox(commitMessage: string): void {
+    vscode.window.showInputBox({ value: commitMessage }).then((input) => {
+        if (input) {
+            vscode.window.showInformationMessage(`Commit message: ${input}`);
         }
     });
 }
