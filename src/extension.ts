@@ -146,8 +146,6 @@ export function activate(context: vscode.ExtensionContext) {
             runComIssCommand();
         })
     );
-
-	context.subscriptions.push(disposable);
 }
 
 async function runComIssCommand() {
